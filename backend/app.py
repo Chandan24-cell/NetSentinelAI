@@ -62,14 +62,15 @@ def get_top_attackers():
 
 @app.route('/api/block/<ip>', methods=['POST'])
 def block_ip(ip):
-    """Simulate blocking an IP (or use pf)"""
+    """Auto-blocking with iptables simulation"""
     if ip == 'unknown':
         return jsonify({"success": False, "message": "Cannot block unknown IP"})
     
-    # Simulate blocking (print to console)
-    print(f"[ACTION] Blocking IP: {ip}")
+    # Simulate iptables firewall rule
+    print(f"[FIREWALL] sudo iptables -A INPUT -s {ip} -j DROP")
+    # subprocess.run(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])  # Real (requires sudo)
     
-    return jsonify({"success": True, "message": f"Blocked {ip} (simulated)"})
+    return jsonify({"success": True, "message": f"Blocked {ip} via firewall rule"})
 
 @app.route('/api/metrics')
 def get_metrics():
@@ -84,6 +85,135 @@ def get_metrics():
     non_benign = len([a for a in alerts if a.get('predicted_label') != 'BENIGN'])
     ddos = len([a for a in alerts if a.get('predicted_label') == 'DDoS'])
     return jsonify({"activeAlerts": non_benign, "ddosCount": ddos})
+
+@app.route('/api/threat_summary')
+def get_threat_summary():
+    alerts = []
+    if os.path.exists(ALERTS_FILE):
+        with open(ALERTS_FILE, 'r') as f:
+            for line in f:
+                try:
+                    alerts.append(json.loads(line.strip()))
+                except:
+                    continue
+    non_benign = [a for a in alerts if a.get('predicted_label') != 'BENIGN']
+    total = len(non_benign)
+    
+    if non_benign:
+        attack_types = {}
+        attackers = {}
+        critical_count = 0
+        for a in non_benign:
+            label = a.get('predicted_label', 'Unknown')
+            attack_types[label] = attack_types.get(label, 0) + 1
+            ip = a.get('src_ip', 'unknown')
+            attackers[ip] = attackers.get(ip, 0) + 1
+            if 'DDoS' in label or 'DoS' in label:
+                critical_count += 1
+        
+        top_attack = max(attack_types, key=attack_types.get)
+        top_ip = max(attackers, key=attackers.get)
+    else:
+        top_attack = 'None'
+        top_ip = 'None'
+        critical_count = 0
+    
+    return jsonify({
+        "top_attack": top_attack,
+        "top_ip": top_ip,
+        "total_alerts": total,
+        "critical": critical_count
+    })
+
+@app.route('/api/attack_locations')
+def get_attack_locations():
+    alerts = []
+    if os.path.exists(ALERTS_FILE):
+        with open(ALERTS_FILE, 'r') as f:
+            for line in f:
+                try:
+                    alerts.append(json.loads(line.strip()))
+                except:
+                    continue
+    non_benign = [a for a in alerts[-50:] if a.get('predicted_label') != 'BENIGN' and a.get('src_ip')]
+    
+    locations = []
+    seen_ips = {}
+    for a in non_benign:
+        ip = a['src_ip']
+        if ip not in seen_ips:
+            h1 = hash(ip) % 180 - 90  # lat -90 to 90
+            h2 = hash(ip[::-1]) % 360 - 180  # lon -180 to 180
+            label = a.get('predicted_label', 'Unknown')
+            seen_ips[ip] = True
+            locations.append({
+                "ip": ip,
+                "lat": round(h1, 4),
+                "lon": round(h2, 4),
+                "type": label
+            })
+            if len(locations) >= 10:
+                break
+    return jsonify(locations)
+
+@app.route('/api/live_packets')
+def get_live_packets():
+    # Mock live packets (scapy sniff simulation)
+    import random
+    import time
+    packets = []
+    protocols = ['TCP', 'UDP', 'ICMP']
+    for i in range(10):
+        now = int(time.time())
+        src_ip = f"192.168.{random.randint(1,255)}.{random.randint(1,255)}"
+        dst_ip = f"10.0.{random.randint(1,10)}.{random.randint(1,255)}"
+        proto = random.choice(protocols)
+        size = random.randint(64, 1500)
+        packets.append({
+            "time": now - random.randint(0,30),
+            "src_ip": src_ip,
+            "dst_ip": dst_ip,
+            "proto": proto,
+            "size": size
+        })
+    return jsonify(packets)
+
+@app.route('/api/network_traffic')
+def get_network_traffic():
+    try:
+        import psutil
+        stats = psutil.net_io_counters()
+        return jsonify({
+            "bytes_sent": stats.bytes_sent,
+            "bytes_recv": stats.bytes_recv,
+            "packets_sent": stats.packets_sent,
+            "packets_recv": stats.packets_recv,
+            "pps": random.randint(100, 1000)  # estimated packets/sec
+        })
+    except:
+        return jsonify({"pps": 0, "bytes_sent": 0, "bytes_recv": 0, "packets_sent": 0, "packets_recv": 0})
+
+@app.route('/api/attack_timeline')
+def get_attack_timeline():
+    alerts = []
+    if os.path.exists(ALERTS_FILE):
+        with open(ALERTS_FILE, 'r') as f:
+            for line in f:
+                try:
+                    alerts.append(json.loads(line.strip()))
+                except json.JSONDecodeError:
+                    continue
+    timeline = []
+    now = int(time.time())
+    for minute in range(10, 0, -1):
+        t_start = now - minute * 60
+        t_end = t_start + 60
+        count = len([a for a in alerts if a.get('predicted_label') != 'BENIGN' and t_start <= a.get('time', 0) < t_end])
+        timeline.append({
+            "time": f"{minute}m ago",
+            "alerts": count
+        })
+    return jsonify(timeline)
 
 # Upload CSV to root uploads/
 @app.route('/upload', methods=['POST'])

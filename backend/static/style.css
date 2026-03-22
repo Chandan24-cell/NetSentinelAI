@@ -1,8 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500&display=swap');
+
 body {
-    font-family: Arial, sans-serif;
-    background: #0f172a;
-    color: white;
-    text-align: center;
+    font-family: 'Inter', monospace;
+    background: linear-gradient(135deg, #0b132b 0%, #1a1f3d 50%, #0f172a 100%);
+    color: #e2e8f0;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+h1 {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    background: linear-gradient(45deg, #00e5ff, #ff3b3b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px #00e5ff40;
+    letter-spacing: 2px;
 }
 
 h2 {
@@ -32,5 +47,32 @@ th {
 
 .badge { font-size: 0.8em; }
 .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.8em; }
-.card { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+.card { 
+    background: #1c2541;
+    border: 1px solid #33415d;
+    box-shadow: 0 0 20px #00e5ff20, inset 0 1px 0 #3a4665;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+.card:hover {
+    box-shadow: 0 0 30px #00e5ff40, 0 0 40px #ff3b3b20;
+    transform: translateY(-5px);
+}
+
+.btn-danger { background: #ff3b3b; border: none; box-shadow: 0 0 10px #ff3b3b40; }
+.btn-danger:hover { box-shadow: 0 0 20px #ff3b3b60; }
+
+.bg-danger { background: linear-gradient(45deg, #ff3b3b, #ff6b6b) !important; }
+.bg-warning { background: linear-gradient(45deg, #ffc107, #ffed4a) !important; }
+.bg-info { background: linear-gradient(45deg, #00e5ff, #4facfe) !important; }
+.bg-secondary { background: linear-gradient(45deg, #6c757d, #9ca3af) !important; }
+
+.severity-critical { background: rgba(255,59,59,0.2) !important; border-left: 4px solid #ff3b3b !important; }
+.severity-high { background: rgba(255,193,7,0.2) !important; border-left: 4px solid #ffc107 !important; }
+.severity-medium { background: rgba(255,193,7,0.3) !important; border-left: 4px solid #ffed4a !important; }
+.severity-low { background: rgba(0,229,255,0.2) !important; border-left: 4px solid #00e5ff !important; }
+
+.confidence-high { color: #ff3b3b; font-weight: bold; }
+.confidence-medium { color: #ffc107; }
+.confidence-low { color: #00e5ff; }
 
