@@ -39,21 +39,24 @@ Traditional signature‑based intrusion detection systems fail to detect novel o
 ---
 
 ## 📊 Dataset
-We used the **CICIDS2017** dataset, a benchmark for intrusion detection research.
+
+We used the **CICIDS2017 dataset**, a benchmark for intrusion detection research.
 
 - **Total flows:** 2,830,743  
 - **Features:** 78 network flow characteristics  
-- **Classes:** 15 (BENIGN + 14 attack types)  
+- **Classes:** 15 (BENIGN + 14 attack types)
+
+### Attack Distribution
+
 | Attack Type | Number of Flows |
-|-------------|----------------|
-| BENIGN      | 2,271,320      |
-| DoS Hulk    | 230,124        |
-| PortScan    | 158,804        |
-| DDoS        | 128,025        |
-| ...         | ...            |
+|-------------|-----------------|
+| BENIGN | 2,271,320 |
+| DoS Hulk | 230,124 |
+| PortScan | 158,804 |
+| DDoS | 128,025 |
+| ... | ... |
 
-> The dataset is highly imbalanced – the model still performs excellently on majority classes.
-
+> The dataset is **highly imbalanced**, but the model still performs excellently on majority classes.
 ---
 
 ## 🏗️ System Architecture
