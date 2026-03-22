@@ -151,7 +151,7 @@ A confirmation message appears.
 
 | Metric                  | Value |
 |-------------------------|-------|
-| Overall Accuracy        | ~100%* |
+| Overall Accuracy        | ~96%* |
 | Weighted Avg F1-Score   | 1.00 |
 | Macro Avg F1-Score      | 0.82 |
 
