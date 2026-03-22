@@ -177,10 +177,12 @@ Model: Random Forest
 ## 🖼️ Screenshots
 
 ### Dashboard (Initial)
-![Dashboard Initial](screenshots/dashboard_initial.png)
+![Dashboard Initial](<img width="1435" height="858" alt="Screenshot 2026-03-22 at 11 56 15 PM" src="https://github.com/user-attachments/assets/f74d970b-6c1e-4bdf-9ce3-5d794145ee76" />
+)
 
 ### Dashboard After Detection
-![Dashboard Alerts](screenshots/dashboard_alerts.png)
+![Dashboard Alerts](<img width="1440" height="813" alt="Screenshot 2026-03-22 at 9 46 24 PM" src="https://github.com/user-attachments/assets/3d0748c2-9a39-4a5f-9c60-198ce3af8f79" />
+)
 
 ### Block IP Action
 ![Block IP](screenshots/block_ip.png)
