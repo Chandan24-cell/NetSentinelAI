@@ -1,0 +1,9 @@
+<parameter name="content"># Favicon ✅ Static ✅ App.py Update
+
+- [x] Favicon.ico in backend/static/
+- [x] Links in index.html (url_for)
+- [ ] Update backend/app.py with dashboard + APIs
+- [ ] Add flask-cors to requirements
+- [ ] Install deps & test
+
+</parameter>

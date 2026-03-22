@@ -1,0 +1,34 @@
+<parameter name="content">from flask import Flask, jsonify
+import json
+import os
+
+app = Flask(__name__)
+
+ALERTS_FILE = 'alerts.json'
+
+def tail(filepath, lines=200):
+    """Return the last `lines` lines of a file."""
+    with open(filepath, 'r') as f:
+        return f.readlines()[-lines:]
+
+@app.route('/api/alerts')
+def get_alerts():
+    if not os.path.exists(ALERTS_FILE):
+        return jsonify([])
+    try:
+        # Read only the last 200 lines for speed
+        last_lines = tail(ALERTS_FILE, 200)
+        alerts = []
+        for line in last_lines:
+            try:
+                alerts.append(json.loads(line))
+            except:
+                pass
+        return jsonify(alerts)
+    except Exception as e:
+        print("Error reading alerts:", e)
+        return jsonify([])
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5001)
+</parameter>

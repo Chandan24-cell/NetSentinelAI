@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AI Intrusion Detection System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #d32f2f; margin-bottom: 5px; }
+        .subtitle { color: #666; margin-bottom: 20px; }
+        
+        /* Stats Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card h3 { font-size: 14px; color: #666; margin-bottom: 5px; }
+        .stat-card .value { font-size: 28px; font-weight: bold; color: #333; }
+        
+        /* Upload Section */
+        .upload-section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .upload-section input, .upload-section button { padding: 10px 15px; margin-right: 10px; }
+        button { background: #2196f3; color: white; border: none; border-radius: 5px; cursor: pointer; transition: opacity 0.2s; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.danger { background: #dc3545; }
+        button.success { background: #28a745; }
+        .status { margin-left: 10px; color: #666; }
+        
+        /* Two Column Layout */
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card h3 { margin-bottom: 15px; color: #333; }
+        
+        /* Table */
+        .table-container { overflow-x: auto; max-height: 400px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; position: sticky; top: 0; }
+        .attack { background: #ffdddd; }
+        
+        /* Top Attackers List */
+        #attackerList { list-style: none; }
+        #attackerList li { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .badge { background: #ff5722; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        .block-btn { background: #dc3545; padding: 2px 10px; font-size: 12px; margin-left: 10px; }
+        
+        .refresh-btn { background: #28a745; margin-left: 10px; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .alert-pulse { animation: pulse 0.5s ease-in-out; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🚨 AI Intrusion Detection System</h1>
+    <div class="subtitle">Real-time Network Attack Detection</div>
+    
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card"><h3>Total Alerts</h3><div class="value" id="alertCount">0</div></div>
+        <div class="stat-card"><h3>Unique Attackers</h3><div class="value" id="attackerCount">0</div></div>
+        <div class="stat-card"><h3>Attack Types</h3><div class="value" id="attackTypeCount">0</div></div>
+        <div class="stat-card"><h3>Last Alert</h3><div class="value" id="lastAlertTime">-</div></div>
+    </div>
+    
+    <!-- Upload Section -->
+    <div class="upload-section">
+        <input type="file" id="csvFile" accept=".csv">
+        <button id="uploadBtn">📤 Upload CSV</button>
+        <button id="runBtn" disabled>▶ Run Detection</button>
+        <span id="status" class="status"></span>
+        <span id="loader" style="display:none;">⏳ Processing...</span>
+        <button id="refreshBtn" class="refresh-btn">🔄 Refresh</button>
+    </div>
+    
+    <!-- Dashboard -->
+    <div class="dashboard">
+        <div class="card">
+            <h3>📊 Attack Timeline</h3>
+            <canvas id="attackChart" height="200"></canvas>
+        </div>
+        <div class="card">
+            <h3>🎯 Top Attackers</h3>
+            <ul id="attackerList"></ul>
+        </div>
+    </div>
+    
+    <!-- Alerts Table -->
+    <div class="card">
+        <h3>📋 Recent Alerts</h3>
+        <div class="table-container">
+            <table id="alertsTable">
+                <thead>
+                    <tr><th>Time</th><th>Attack Type</th><th>Source IP</th><th>Destination IP</th><th>Protocol</th><th>Action</th></tr>
+                </thead>
+                <tbody id="alertBody">
+                    <tr><td colspan="6">Loading alerts...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentFilePath = null;
+let chart = null;
+
+// Helper: Format time
+function formatTime(timestamp) {
+    return new Date(timestamp * 1000).toLocaleString();
+}
+
+// Load and display alerts
+async function loadAlerts() {
+    try {
+        const response = await fetch('/api/alerts');
+        const alerts = await response.json();
+        
+        // Update stats
+        document.getElementById('alertCount').innerHTML = alerts.length;
+        
+        if (alerts.length === 0) {
+            document.getElementById('alertBody').innerHTML = '<tr><td colspan="6">No alerts detected. Upload a CSV and run detection.</td></tr>';
+            return;
+        }
+        
+        // Get last alert time
+        const lastAlert = alerts[0];
+        if (lastAlert) {
+            document.getElementById('lastAlertTime').innerHTML = formatTime(lastAlert.time);
+        }
+        
+        // Count unique attackers
+        const attackers = new Map();
+        const attackTypes = new Map();
+        
+        alerts.forEach(alert => {
+            attackers.set(alert.src_ip, (attackers.get(alert.src_ip) || 0) + 1);
+            attackTypes.set(alert.predicted_label, (attackTypes.get(alert.predicted_label) || 0) + 1);
+        });
+        
+        document.getElementById('attackerCount').innerHTML = attackers.size;
+        document.getElementById('attackTypeCount').innerHTML = attackTypes.size;
+        
+        // Update top attackers list
+        const sortedAttackers = Array.from(attackers.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const attackerList = document.getElementById('attackerList');
+        attackerList.innerHTML = '';
+        sortedAttackers.forEach(([ip, count]) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span><strong>${ip === 'unknown' ? 'Unknown' : ip}</strong> <span class="badge">${count}</span></span>
+                           <button class="block-btn" onclick="blockIP('${ip}')">Block</button>`;
+            attackerList.appendChild(li);
+        });
+        
+        // Update chart
+        const labels = Array.from(attackTypes.keys());
+        const data = Array.from(attackTypes.values());
+        
+        if (chart) {
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = data;
+            chart.update();
+        } else {
+            const ctx = document.getElementById('attackChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: 'Alerts', data: data, backgroundColor: '#ff5722' }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top' } } }
+            });
+        }
+        
+        // Update table
+        const tbody = document.getElementById('alertBody');
+        tbody.innerHTML = '';
+        alerts.slice(0, 100).forEach(alert => {
+            const row = tbody.insertRow();
+            if (alert.predicted_label !== 'BENIGN') row.classList.add('attack');
+            row.insertCell(0).textContent = formatTime(alert.time);
+            row.insertCell(1).textContent = alert.predicted_label;
+            row.insertCell(2).textContent = alert.src_ip;
+            row.insertCell(3).textContent = alert.dst_ip;
+            row.insertCell(4).textContent = alert.protocol;
+            const actionCell = row.insertCell(5);
+            const blockBtn = document.createElement('button');
+            blockBtn.textContent = 'Block';
+            blockBtn.className = 'block-btn';
+            blockBtn.onclick = () => blockIP(alert.src_ip);
+            actionCell.appendChild(blockBtn);
+        });
+        
+    } catch (error) {
+        console.error('Error loading alerts:', error);
+    }
+}
+
+// Block IP function
+async function blockIP(ip) {
+    if (ip === 'unknown') {
+        alert('Cannot block unknown IP');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/block/${ip}`, { method: 'POST' });
+        const result = await response.json();
+        alert(result.message);
+        if (result.success) {
+            // Highlight the IP in attackers list
+            const btn = event.target;
+            btn.textContent = 'Blocked';
+            btn.disabled = true;
+        }
+    } catch (error) {
+        alert('Error blocking IP: ' + error.message);
+    }
+}
+
+// Upload file
+document.getElementById('uploadBtn').addEventListener('click', async () => {
+    const file = document.getElementById('csvFile').files[0];
+    if (!file) { alert('Please select a CSV file'); return; }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    document.getElementById('status').innerHTML = 'Uploading...';
+    
+    try {
+        const response = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (response.ok) {
+            currentFilePath = data.path;
+            document.getElementById('status').innerHTML = '✅ Uploaded: ' + file.name;
+            document.getElementById('runBtn').disabled = false;
+        } else {
+            document.getElementById('status').innerHTML = '❌ Upload failed';
+        }
+    } catch (error) {
+        document.getElementById('status').innerHTML = '❌ Upload error';
+    }
+});
+
+// Run detection
+document.getElementById('runBtn').addEventListener('click', async () => {
+    if (!currentFilePath) { alert('Please upload a file first'); return; }
+    
+    document.getElementById('loader').style.display = 'inline';
+    document.getElementById('status').innerHTML = 'Running detection...';
+    document.getElementById('runBtn').disabled = true;
+    
+    try {
+        const response = await fetch('/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: currentFilePath })
+        });
+        const data = await response.json();
+        document.getElementById('status').innerHTML = '✅ Detection started! Refreshing...';
+        setTimeout(() => {
+            loadAlerts();
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('runBtn').disabled = false;
+        }, 3000);
+    } catch (error) {
+        document.getElementById('status').innerHTML = '❌ Detection error';
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('runBtn').disabled = false;
+    }
+});
+
+// Refresh button
+document.getElementById('refreshBtn').addEventListener('click', () => loadAlerts());
+
+// Auto-refresh every 10 seconds
+loadAlerts();
+setInterval(loadAlerts, 10000);
+</script>
+</body>
+</html>

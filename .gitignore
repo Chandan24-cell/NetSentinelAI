@@ -1,0 +1,7 @@
+venv/
+MachineLearningCVE/
+*.csv
+*.pcap
+__pycache__/
+.env
+.DS_Store
