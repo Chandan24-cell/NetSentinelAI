@@ -212,7 +212,7 @@ HTML/CSS/JavaScript – dashboard frontend
 📜 License
 This project is open‑source and available under the MIT License.
 
-🙏 Acknowledgements
+## Acknowledgements
 The Canadian Institute for Cybersecurity for the CICIDS2017 dataset.
 
 The scikit‑learn and Flask communities for their excellent libraries.
