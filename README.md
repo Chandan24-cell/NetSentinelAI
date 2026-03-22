@@ -44,37 +44,55 @@ We used the **CICIDS2017** dataset, a benchmark for intrusion detection research
 - **Total flows:** 2,830,743  
 - **Features:** 78 network flow characteristics  
 - **Classes:** 15 (BENIGN + 14 attack types)  
-
-| Attack Type               | Number of Flows |
-|---------------------------|----------------|
-| BENIGN                    | 2,271,320      |
-| DoS Hulk                  | 230,124        |
-| PortScan                  | 158,804        |
-| DDoS                      | 128,025        |
-| … (other attacks)         | …              |
+| Attack Type | Number of Flows |
+|-------------|----------------|
+| BENIGN      | 2,271,320      |
+| DoS Hulk    | 230,124        |
+| PortScan    | 158,804        |
+| DDoS        | 128,025        |
+| ...         | ...            |
 
 > The dataset is highly imbalanced – the model still performs excellently on majority classes.
 
 ---
 
 ## 🏗️ System Architecture
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│ Training │ │ Detection │ │ Dashboard │
-│ (offline) │────▶│ Engine │────▶│ (Flask) │
-│ - Load data │ │ - Load model │ │ - /api/alerts │
-│ - Clean │ │ - Predict │ │ - /upload │
-│ - Train RF │ │ - Write JSON │ │ - /run │
-└─────────────────┘ └─────────────────┘ └─────────────────┘
-│
-▼
-┌─────────────────┐
-│ Browser │
-│ - Charts │
-│ - Table │
-│ - Block IP │
-└─────────────────┘
 
-text
+```
+                    ┌─────────────────┐
+                    │    Training     │
+                    │    (offline)    │
+                    │ - Load data     │
+                    │ - Clean         │
+                    │ - Train RF      │
+                    └─────────┬───────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │    Detection    │
+                    │      Engine     │
+                    │ - Load model    │
+                    │ - Predict       │
+                    │ - Write JSON    │
+                    └─────────┬───────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │    Dashboard    │
+                    │      (Flask)    │
+                    │ - /api/alerts   │
+                    │ - /upload       │
+                    │ - /run          │
+                    └─────────┬───────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │     Browser     │
+                    │ - Charts        │
+                    │ - Table         │
+                    │ - Block IP      │
+                    └─────────────────┘
+```
 
 ---
 
@@ -126,33 +144,43 @@ The backend will simulate blocking (or actually block if you configure pf).
 
 A confirmation message appears.
 
-📈 Model Performance
-Metric	Value
-Overall Accuracy	~100%*
-Weighted Avg F1‑Score	1.00
-Macro Avg F1‑Score	0.82
-*The overall accuracy is inflated due to the majority class (BENIGN). The model performs excellently on common attacks (DDoS, DoS Hulk, PortScan) and adequately on rarer ones.
+## 📈 Model Performance
 
-Classification Report (condensed)
+| Metric                  | Value |
+|-------------------------|-------|
+| Overall Accuracy        | ~100%* |
+| Weighted Avg F1-Score   | 1.00 |
+| Macro Avg F1-Score      | 0.82 |
 
-Class	Precision	Recall	F1‑Score	Support
-BENIGN	1.00	1.00	1.00	454,265
-DDoS	1.00	1.00	1.00	25,605
-DoS Hulk	1.00	1.00	1.00	46,025
-PortScan	0.99	1.00	1.00	31,761
-Bot	0.90	0.49	0.64	391
-Web Attack – XSS	0.47	0.05	0.10	130
-🖼️ Screenshots
-(Place your screenshots here)
+\* The overall accuracy is inflated due to the majority class (**BENIGN**).  
+The model performs excellently on common attacks such as **DDoS, DoS Hulk, and PortScan**, and adequately on rarer ones.
+Dataset: CICIDS2017  
+Total flows used for evaluation: ~2.8M
+Model: Random Forest
 
-Dashboard – initial
-https://screenshots/dashboard_initial.png
+## 📊 Classification Report (Condensed)
 
-Dashboard after detection
-https://screenshots/dashboard_alerts.png
+| Class            | Precision | Recall | F1-Score | Support |
+|------------------|-----------|--------|----------|---------|
+| BENIGN           | 1.00      | 1.00   | 1.00     | 454,265 |
+| DDoS             | 1.00      | 1.00   | 1.00     | 25,605  |
+| DoS Hulk         | 1.00      | 1.00   | 1.00     | 46,025  |
+| PortScan         | 0.99      | 1.00   | 1.00     | 31,761  |
+| Bot              | 0.90      | 0.49   | 0.64     | 391     |
+| Web Attack – XSS | 0.47      | 0.05   | 0.10     | 130     |
 
-Block IP action
-https://screenshots/block_ip.png
+---
+
+## 🖼️ Screenshots
+
+### Dashboard (Initial)
+![Dashboard Initial](screenshots/dashboard_initial.png)
+
+### Dashboard After Detection
+![Dashboard Alerts](screenshots/dashboard_alerts.png)
+
+### Block IP Action
+![Block IP](screenshots/block_ip.png)
 
 🔮 Future Work
 Live packet capture – integrate with scapy or CICFlowMeter for real‑time monitoring.
