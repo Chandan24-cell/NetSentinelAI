@@ -22,22 +22,10 @@ UPLOAD_FOLDER = '../uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__name__), '..'))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 ALERTS_FILE = os.path.join(BASE_DIR, 'alerts.json')
 ML_SCRIPT = os.path.join(BASE_DIR, 'ml', 'predict_with_alerts.py')
-
-@app.route('/api/progress')
-def get_progress():
-    progress_file = os.path.join(BASE_DIR, 'progress.json')
-    if os.path.exists(progress_file):
-        try:
-            with open(progress_file, 'r') as f:
-                return jsonify(json.load(f))
-        except:
-            pass
-    return jsonify({'percentage': 0, 'message': 'Waiting...'})
-
 
 # API: Get alerts (shared alerts.json at root)
 @app.route('/api/alerts')
@@ -251,21 +239,7 @@ def upload_file():
     return jsonify({"message": "File uploaded", "path": filepath})
 
 # Run detection - spawn ML from root cwd
-@app.route('/run', methods=['POST'])
-def run_detection():
-    data = request.get_json()
-    filepath = data.get('path') or data.get('file_path')
-    if not filepath or not os.path.exists(filepath):
-        return jsonify({"error": "Invalid file path"}), 400
-
-    # clear old alerts at root
-    with open(ALERTS_FILE, 'w'):
-        pass
-
-    # Spawn from root: cd .. && python ml/predict_with_alerts.py $filepath
-    subprocess.Popen([sys.executable, ML_SCRIPT, filepath])
-
-    return jsonify({"message": "Detection started"})
+@app.route('/api/progress')\ndef get_progress():\n    progress_file = os.path.join(BASE_DIR, 'progress.json')\n    if os.path.exists(progress_file):\n        with open(progress_file, 'r') as f:\n            return jsonify(json.load(f))\n    return jsonify({'percentage': 0, 'message': 'Waiting...'})\n\n@app.route('/run', methods=['POST'])\ndef run_detection():\n    data = request.get_json()\n    filepath = data.get('path') or data.get('file_path')\n    if not filepath or not os.path.exists(filepath):\n        return jsonify({"error": "Invalid file path"}), 400\n\n    # clear old alerts at root\n    with open(ALERTS_FILE, 'w'):\n        pass\n\n    # Spawn from root: cd .. && python ml/predict_with_alerts.py $filepath\n    subprocess.Popen([sys.executable, ML_SCRIPT, filepath])\n\n    return jsonify({"message": "Detection started"})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
