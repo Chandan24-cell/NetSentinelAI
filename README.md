@@ -217,5 +217,12 @@ The Canadian Institute for Cybersecurity for the CICIDS2017 dataset.
 
 The scikit‑learn and Flask communities for their excellent libraries.
 
-Developed by: [Your Name]
-For: ITRIX’26 – Department of Information Science and Technology, CEG, Anna University, Chennai.
+## Developed By
+
+**Chandan Kumar Sah**  
+KPR Institute of Engineering and Technology  
+
+Project developed for **ITRIX’26**  
+Department of Information Science and Technology  
+College of Engineering, Guindy (CEG)  
+Anna University, Chennai
